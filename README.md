@@ -5,8 +5,7 @@
 
 <img src="https://cdn.discordapp.com/attachments/1080688729171169422/1144410005760647381/image.png"> 
 
------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
+---  
 
 ##  **Descrição:**
 
@@ -40,9 +39,47 @@
 
   > O Scythe Control é uma ferramenta poderosa, mas não é uma solução completa de segurança. Ele pode ajudar a detectar e prevenir algumas ameaças, mas não substitui uma solução de segurança abrangente e atualizada. Use-o como parte de uma abordagem de segurança em camadas para proteger seus sistemas contra ameaças cibernéticas.
 
------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 ## **Licença:**
 
   > O Scythe Control é distribuído sob a licença MIT, o que significa que você pode usar, modificar e distribuir o software, desde que inclua a atribuição de autoria.
+
+---
+
+ᅠᅠ  
+
+---  
+
+## **Description:**
+  > Scythe Control is a cybersecurity tool developed for the detection and prevention of ransomware and other threats on Windows systems. It utilizes the creation of "traps" for files and folders that, when modified, trigger an alert and take security measures to contain the threat.
+
+
+## **Key Features:**
+  > *Ransomware Detection: Scythe Control continuously monitors the traps you define and detects suspicious file modification activities in real-time.*
+
+  > *Security Alerts: When suspicious activity is detected, Scythe Control immediately displays alerts to notify the user of the potential threat.*
+
+  > *Threat Prevention: In addition to alerts, Scythe Control takes actions to mitigate the threat, including terminating malicious processes.*
+
+  > *Intuitive Graphical Interface: Scythe Control features a simple and user-friendly graphical interface that allows users to enable and disable detection, view status, and alerts.*
+
+
+## **Instructions for Use:**
+  > Installation: Ensure that you have all the dependencies installed, including libraries such as watchdog, tkinter, win10toast, psutil, among others. You can use the requirements.txt file to automatically install these libraries using the command "pip install -r requirements.txt.
+
+  > Trap Configuration: Run the program and configure the folders you want to use as traps. The program will create "dummy" files in these folders to attract suspicious activity.
+
+  > Activation of Detection: Use the graphical interface to activate detection. The program will continuously monitor the traps and respond to suspicious activities.
+
+  > Alerts and Prevention: If the program detects suspicious activity, it will issue alerts in the graphical interface and take preventive actions, such as terminating malicious processes.
+
+
+## **Notes:**
+  > Scythe Control is a powerful tool but is not a complete security solution. It can help detect and prevent some threats but does not replace a comprehensive and up-to-date security solution. Use it as part of a layered security approach to protect your systems against cyber threats.
+
+
+## **License:**
+  > Scythe Control is distributed under the MIT license, which means you can use, modify, and distribute the software as long as you include proper authorship attribution.
+
+---
 
