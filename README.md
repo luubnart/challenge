@@ -3,7 +3,7 @@
 # Scythe Control: Ransomware Detection
 
 
-<img src="https://cdn.discordapp.com/attachments/1080688729171169422/1144410005760647381/image.png"> 
+<img src="https://media.discordapp.net/attachments/998288318200561674/1156364225317441626/F3DB4F06-D972-4FF6-ABA4-B00C0D86CB08.jpg?"> 
 
 ---  
 
