@@ -12,6 +12,44 @@ from win10toast import ToastNotifier
 import psutil
 import requests
 import hashlib
+import time
+import win32security
+import ntsecuritycon
+
+def set_permissions(path):
+    dacl = win32security.ACL()
+    sid = win32security.ConvertStringSidToSid("S-1-5-32-545")  # SID para o grupo "Usuários"
+    dacl.AddAccessAllowedAce(win32security.ACL_REVISION, ntsecuritycon.FILE_GENERIC_READ, sid)
+    sid = win32security.ConvertStringSidToSid("S-1-5-32-544")  # SID para o grupo "Administradores"
+    dacl.AddAccessAllowedAce(win32security.ACL_REVISION, ntsecuritycon.FILE_GENERIC_READ, sid)
+    sd = win32security.SECURITY_DESCRIPTOR()
+    sd.SetSecurityDescriptorDacl(1, dacl, 0)
+    win32security.SetFileSecurity(path, win32security.DACL_SECURITY_INFORMATION, sd)
+
+# Função para definir permissões de gravação temporariamente
+def set_permissions_temp_write(path):
+    dacl = win32security.ACL()
+    sid = win32security.ConvertStringSidToSid("S-1-5-32-545")  # SID para o grupo "Usuários"
+    dacl.AddAccessAllowedAce(win32security.ACL_REVISION, ntsecuritycon.FILE_GENERIC_WRITE, sid)
+    sid = win32security.ConvertStringSidToSid("S-1-5-32-544")  # SID para o grupo "Administradores"
+    dacl.AddAccessAllowedAce(win32security.ACL_REVISION, ntsecuritycon.FILE_GENERIC_WRITE, sid)
+    sd = win32security.SECURITY_DESCRIPTOR()
+    sd.SetSecurityDescriptorDacl(1, dacl, 0)
+    win32security.SetFileSecurity(path, win32security.DACL_SECURITY_INFORMATION, sd)
+
+# Caminho do arquivo de texto
+caminho_do_arquivo = r"C:\\Users\\koji\\Documents\\scythe\\"
+
+# Defina as permissões de leitura no arquivo
+set_permissions(caminho_do_arquivo)
+
+# Agora, você pode usar a função set_permissions_temp_write para dar permissão de gravação temporariamente:
+set_permissions_temp_write(caminho_do_arquivo)
+# Faça as operações de gravação no arquivo aqui
+
+# Depois que terminar as operações de gravação, remova as permissões de gravação temporariamente
+set_permissions(caminho_do_arquivo)
+
 
 class Hash():
     def init(self, last_file: str):
@@ -182,18 +220,68 @@ def Inicio():
                             threaded=True,
                         )
 
-                        # Mata os processos suspeitos dentro dos diretórios monitorados
-                        for dir_to_check in [d, e, f]:
-                            for proc in psutil.process_iter(['pid', 'exe']):
+
+
+                        # Define o limite de consumo de RAM em MB
+                        limite_ram_mb = 50
+
+                        # Função para listar e imprimir processos com uso de RAM acima do limite
+                        def listar_processos_acima_limite(limite):
+                            for processo in psutil.process_iter(attrs=['pid', 'name', 'memory_info']):       
                                 try:
-                                    process_pid = proc.info['pid']
-                                    process_exe = proc.info['exe']
-                                    if process_exe and dir_to_check in process_exe:
-                                        print(f'Killing process with PID {process_pid}')
-                                        os.kill(process_pid, signal.SIGTERM)
+                                    info_memoria = processo.info['memory_info']
+                                    consumo_ram_mb = info_memoria.rss / (1024 * 1024)  
+
+
+                                    if consumo_ram_mb > limite:                                      
+                                        print(f"Processo que utilizou mais de {limite} MB de RAM:")
+                                        print(f"Nome: {processo.info['name']}")
+                                        print(f"PID: {processo.info['pid']}")
+                                        print(f"Uso de Memória (RSS): {consumo_ram_mb} MB")
+                                        print("=" * 40)  # Linha separadora
+
                                 except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
                                     pass
-                        observer.stop()
+
+                        # Lista de processos que não devem ser encerrados
+                        processos_permitidos = []
+
+                        # Lê os nomes dos processos permitidos a partir do arquivo
+                        with open("processos_permitidos.txt", "r") as arquivo:
+                            for linha in arquivo:
+                                processo_permitido = linha.strip()  # Remove espaços em branco e quebras de linha
+                                processos_permitidos.append(processo_permitido)
+
+                        # Obtém o PID do seu próprio programa
+                        meu_pid = os.getpid()
+
+                        # Loop principal
+                        while True:
+                            # Verifica os processos e imprime os que estão acima do limite de RAM
+                            listar_processos_acima_limite(limite_ram_mb)
+    
+                            # Verifica outros processos e não encerra os processos permitidos
+                            for processo in psutil.process_iter(attrs=['pid', 'name']):
+                                try:
+                                    processo_info = processo.info
+                                    pid = processo_info['pid']
+                                    nome_processo = processo_info['name']
+            
+            # Verifica se o processo é permitido e não é o próprio programa
+                                    if nome_processo.lower() not in processos_permitidos and pid != meu_pid:
+                                        processo_encerrar = psutil.Process(pid)
+                                        processo_encerrar.terminate()  # Encerra o processo
+                                        print(f"Processo encerrado: {nome_processo} (PID {pid})")
+                                except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                                    pass
+
+    # Intervalo de verificação (em segundos)
+                            time.sleep(15)  # Verifica a cada 15 segundos
+
+                        
+                        
+                        
+                    observer.stop()
 
         observer = Observer()
         observer.schedule(MyEventHandler1(), d, recursive=True)
