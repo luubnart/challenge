@@ -1,5 +1,3 @@
-# Importação de bibliotecas
-import pathlib
 import os
 import shutil
 import string
@@ -7,78 +5,121 @@ import random
 import time
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
-import os
 import signal
 from tkinter import *
 from tkinter import ttk
-import time
 from win10toast import ToastNotifier
 import psutil
+import requests
+import hashlib
 
-#---------------------------------------------------------
+class Hash():
+    def init(self, last_file: str):
+        self.malware = False
+        self.last_file = last_file
 
-# Função para pegar o PID da interface e fechar a janela
+    def generate_hash(self):
+        sha256 = hashlib.sha256()
+        with open(self.last_file, "rb") as file:
+            for chunk in iter(lambda: file.read(4094), b""):
+                sha256.update(chunk)
+        return sha256.hexdigest()
+
+class API(Hash):
+    def init(self, last_file):
+        super().init(last_file)
+        self.url = "https://mb-api.abuse.ch/api/v1/"
+        self.malware_info = {}
+        self.database_search()
+
+    def database_search(self):
+        errors = ["illegal_hash", "hash_not_found"]
+        hash_value = self.generate_hash()
+        data = {
+            "query": "get_info",
+            "hash": hash_value
+        }
+        response = requests.post(url=self.url, data=data)
+        if response.status_code == 200:
+            response_data = response.json()
+            if response_data["query_status"] not in errors:
+                self.malware_info["signature"] = response_data["data"][0]["signature"]
+                self.malware_info["sha256"] = response_data["data"][0]["sha256_hash"]
+                self.malware_info["locate"] = self.last_file
+                self.malware = True
+        else:
+            self.malware = False
+
+class PublicMalwareDetection(API):
+    def init(self, last_file):
+        super().init(last_file)
+        self.main()
+
+    def main(self):
+        if self.malware:
+            log_file = "C:\\Users\\scythe\\Documents\\logs.log"
+            with open(log_file, "a") as file:
+                file.write(f'\nMalware Detected!\n{"-"*20}\nSignature: {self.malware_info["signature"]}\nSHA256: {self.malware_info["sha256"]}\nLocate: {self.malware_info["locate"]}\n{"-"*20}')
+            os.remove(self.last_file)
+
 def Pid():
-    pid = os.getpid()  # Obtém o PID
-    os.kill(pid, signal.SIGTERM)  # Fecha a janela
+    pid = os.getpid()
+    os.kill(pid, signal.SIGTERM)
 
-# Função para iniciar o programa
 def Inicio():
-    # Função para identificar a raiz do sistema
     def RaizIden():
-        drive = pathlib.Path.home().drive
+        drive = os.path.splitdrive(os.path.expanduser("~"))[0]
 
-        # Identificação da raiz do sistema com base na unidade do usuário
         if drive == 'C:':
             global c, d, e, f
-            c = 'C:/'  # Unidade C:
-            d = r'C:\!TrapFolder'  # Pasta de armadilha 1
-            e = r'C:\lTrapFolder'  # Pasta de armadilha 2
-            f = r'C:\zTrapFolder'  # Pasta de armadilha 3
+            c = 'C:/'
+            d = r'C:\!Armadilha'
+            e = r'C:\lArmadilha'
+            f = r'C:\zArmadilha'
         elif drive == 'E:':
-            c = 'E:/'  # Unidade E:
-            d = r'C:\!TrapFolder'
-            e = r'C:\lTrapFolder'
-            f = r'C:\zTrapFolder'
+            c = 'E:/'
+            d = r'C:\!Armadilha'
+            e = r'C:\lArmadilha'
+            f = r'C:\zArmadilha'
         elif drive == 'D:':
-            c = 'D:/'  # Unidade D:
-            d = r'C:\!TrapFolder'
-            e = r'C:\lTrapFolder'
-            f = r'C:\zTrapFolder'
+            c = 'D:/'
+            d = r'C:\!Armadilha'
+            e = r'C:\lArmadilha'
+            f = r'C:\zArmadilha'
         elif drive == 'F:':
-            c = 'F:/'  # Unidade F:
-            d = r'C:\!TrapFolder'
-            e = r'C:\lTrapFolder'
-            f = r'C:\zTrapFolder'
+            c = 'F:/'
+            d = r'C:\!Armadilha'
+            e = r'C:\lArmadilha'
+            f = r'C:\zArmadilha'
     RaizIden()
 
-    # Nomes das pastas de armadilha
-    directory1 = "!TrapFolder" 
-    directory2 = 'lTrapFolder'
-    directory3 = 'zTrapFolder'
+    directory1 = "!Armadilha"
+    directory2 = 'lArmadilha'
+    directory3 = 'zArmadilha'
 
-    parent_dir = c  # Diretório principal
+    parent_dir = c
 
-    # Função para criar as pastas de armadilha
     def CriandoPastas():
-        path1 = os.path.join(parent_dir, directory1)  # Caminho da pasta 1
-        path2 = os.path.join(parent_dir, directory2)  # Caminho da pasta 2
-        path3 = os.path.join(parent_dir, directory3)  # Caminho da pasta 3
+        path1 = os.path.join(parent_dir, directory1)
+        path2 = os.path.join(parent_dir, directory2)
+        path3 = os.path.join(parent_dir, directory3)
 
-        os.mkdir(path1)  # Cria a pasta 1
-        os.mkdir(path2)  # Cria a pasta 2
-        os.mkdir(path3)  # Cria a pasta 3
+        if not os.path.exists(path1):
+            os.mkdir(path1)
+        if not os.path.exists(path2):
+            os.mkdir(path2)
+        if not os.path.exists(path3):
+            os.mkdir(path3)
 
     CriandoPastas()
 
-    # Função para criar arquivos nas pastas de armadilha
     def Arquivos():
         number_of_strings = 5
         length_of_string = 5
         l = 0
-        # Criação de arquivos .txt dentro das pastas de armadilha
+
         for x in range(number_of_strings):
-            while l < 5000:
+            while l < 1000:
                 save_path1 = d
                 name_of_file1 = ''.join(random.choice(string.ascii_letters + string.digits) for _ in range(length_of_string))
                 completeName1 = os.path.join(save_path1, name_of_file1+".txt")
@@ -88,8 +129,9 @@ def Inicio():
                 file1.close()
                 l += 1
         m = 0
+
         for y in range(number_of_strings):
-            while m < 5000:
+            while m < 1000:
                 save_path2 = e
                 name_of_file2 = ''.join(random.choice(string.ascii_letters + string.digits) for _ in range(length_of_string))
                 completeName2 = os.path.join(save_path2, name_of_file2+".txt")
@@ -99,8 +141,9 @@ def Inicio():
                 file2.close()
                 m += 1
         n = 0
+
         for z in range(number_of_strings):
-            while n < 5000:
+            while n < 1000:
                 save_path3 = f
                 name_of_file3 = ''.join(random.choice(string.ascii_letters + string.digits) for _ in range(length_of_string))
                 completeName3 = os.path.join(save_path3, name_of_file3+".txt")
@@ -109,58 +152,49 @@ def Inicio():
                 file3.write(toFile3)
                 file3.close()
                 n += 1
-    Arquivos()
 
+    Arquivos()
     print("Detector Ligado")
 
     start = time.time()
     lista = []
+    observer = None
 
-    # Função do observador
     def Obervador2():
+        nonlocal observer
+
         class MyEventHandler1(FileSystemEventHandler):
             def on_modified(self, event):
-                print(event.src_path, 'Modificado')
+                print(event.src_path, 'Modificado (RANSOMWARE)')
                 lista.append(event.src_path)
                 if len(lista) > 200:
                     stop = time.time()
                     b = start - stop
                     if b < 10:
-                        print('Possivel Ransomware Detectado')
+                        print('Ransomware Detectado')
 
-                        # Notificação no sistema quando detectar
                         toast = ToastNotifier()
                         toast.show_toast(
                             "Alerta ransomware",
                             "Ransomware Detectado by scythe",
-                            duration = 20,
-                            icon_path = "scythe.ico",
-                            threaded = True,
+                            duration=20,
+                            icon_path="scythe.ico",
+                            threaded=True,
                         )
 
-                        # Função para encontrar o PID de processos
-                        def findProcessIdByName(processName):
-                            listOfProcessObjects = []
-                            for proc in psutil.process_iter():
+                        # Mata os processos suspeitos dentro dos diretórios monitorados
+                        for dir_to_check in [d, e, f]:
+                            for proc in psutil.process_iter(['pid', 'exe']):
                                 try:
-                                    pinfo = proc.as_dict(attrs=['pid', 'name', 'create_time'])
-                                    if processName.lower() in pinfo['name'].lower() :
-                                        listOfProcessObjects.append(pinfo)
-                                except (psutil.NoSuchProcess, psutil.AccessDenied , psutil.ZombieProcess) :
+                                    process_pid = proc.info['pid']
+                                    process_exe = proc.info['exe']
+                                    if process_exe and dir_to_check in process_exe:
+                                        print(f'Killing process with PID {process_pid}')
+                                        os.kill(process_pid, signal.SIGTERM)
+                                except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
                                     pass
-                            return listOfProcessObjects;
-
-                        listOfProcessIds = findProcessIdByName('')  # Encontra PIDs
-                        if len(listOfProcessIds) > 0:
-                            for elem in listOfProcessIds:
-                                processID = elem['pid']
-                                os.kill(processID, 9)  # Mata o processo
-                                print('Processo foi morto')
-                        else :
-                            print('Processo NÃO foi morto')
                         observer.stop()
 
-        # Observa as modificações nas pastas
         observer = Observer()
         observer.schedule(MyEventHandler1(), d, recursive=True)
         observer.schedule(MyEventHandler1(), e, recursive=True)
@@ -171,13 +205,16 @@ def Inicio():
             while observer.is_alive():
                 observer.join(1)
         except KeyboardInterrupt:
-            shutil.rmtree("C:\!TrapFolder")
-            shutil.rmtree("C:\lTrapFolder")
-            shutil.rmtree("C:\zTrapFolder")
-            print("Trap Folders Deletados!!")
+            shutil.rmtree(d)
+            shutil.rmtree(e)
+            shutil.rmtree(f)
+            print("Armadilhas retiradas com sucesso")
             observer.stop()
 
     Obervador2()
 
-# Inicia o programa
-Inicio()
+if name == "main":
+    try:
+        Inicio()
+    except KeyboardInterrupt:
+        print("Programa encerrado pelo usuário")
